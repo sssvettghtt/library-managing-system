@@ -7,11 +7,29 @@
 #include <map>
 
 
-struct Book{
+class Book{
     std::string author, title, genre, description, isbn;
     int year;
     std::vector<std::string> tags;
     double rating;
+
+    public:
+    Book(std::string a, std::string t, std::string g, std::string desc, int y, std::vector<std::string> tg,
+        double r, std::string id)
+        : author(a), title(t), genre(g), description(desc), year(y), tags(tg), rating(r), isbn(id){}
+
+
+    std::string getTitle()const{return title;}
+    std::string getAuthor()const{return author;}
+    std::string getGenre()const{return genre;}
+    std::string getISBN()const{return isbn;}
+    int getYear()const{return year;}
+    double getRating()const{return rating;}
+    std::vector<std::string> getTags()const{return tags;}
+
+    void setRating(double r){
+        if(r>=0 && r<=5) rating=r;
+    }
 
     void printShort()const{
         std::cout<<title<<" by "<<author<<"["<<genre<<"] ISBN: "<<isbn<<std::endl;
@@ -24,7 +42,13 @@ struct Book{
         <<"\n Description: "<<description
         <<"\n Year: "<<year
         <<"\n Rating: "<<rating
-        <<"\n ISBN: "<<isbn<<std::endl;
+        <<"\n ISBN: "<<isbn
+        <<"\n Description: "<<description
+        <<"\n Tags: ";
+        for(const std::string& tag: tags){
+            std::cout<<tag<<" ";
+        }        
+        std::cout<<std::endl;
     }
 };
 
@@ -42,15 +66,20 @@ class User{
 
     virtual bool isAdmin()const=0;
 
-    virtual void printInfo()const{
+    //do i need it?
+    /*virtual void printInfo()const{
         std::cout<<"User: "<<username<<"[Role: "<<(isAdmin()? "Admin": "Client") <<"]"<<std::endl;
-    }
+    }*/
    
 };
 
 class Client: public User{
     public:
     Client(std::string u, std::string p): User(u,p){}
+
+    bool isAdmin()const override{
+        return false;
+    }
 };
 
 class Admin: public User{
@@ -61,21 +90,35 @@ class Admin: public User{
         return true;
     }
 
-    void printInfo()const override{
+    //ako nqmam nujda ot print info i ot tova nqmam
+    /*void printInfo()const override{
         std::cout<<"===Administrator Account==="<<std::endl;
         User::printInfo();
-    }
+    }*/
 };
 
 class Library{
     std::vector<Book> books;
-    std::map<std::string, User*> users;
+    std::map<std::string, std::string> users;
     User* currentUser=nullptr;
     std::string currentFilePath="";
     bool isFileOpen=false;
 
-    void free(){};
-    bool checkAccess(bool AdminRequired){};
+    std::string toLower(std::string str){
+        //what?
+        //std::transform(str.begin(), str.end(), ::tolower);
+        return str;
+    }
+
+    void cleanData(){
+        books.clear();
+        currentUser=nullptr;
+        currentFilePath="";
+        isFileOpen=false;
+    }
+
+    //void free(){};
+    //bool checkAccess(bool AdminRequired){};
 
     public:
     Library(){}

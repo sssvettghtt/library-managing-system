@@ -5,6 +5,7 @@
 #include <sstream>
 #include <algorithm>
 #include <map>
+#include <windows.h>
 
 class LibraryExceptions : public std::exception
 {
@@ -69,15 +70,16 @@ public:
 
     void writeToFile(std::ostream &file) const
     {
-        file << title << "| "
-             << author << "| "
-             << genre << "| "
-             << description << "| "
-             << year << "| "
-             << rating << "| "
-             << isbn << "| ";
+        file << "BOOK| "
+             <<title << "|"
+             << author << "|"
+             << genre << "|"
+             << description << "|"
+             << year << "|"
+             << rating << "|"
+             << isbn << "|";
 
-        for (int i = 0; i < tags.size(); i++)
+        for (size_t i = 0; i < tags.size(); i++)
         {
             file << tags[i];
             if (i != tags.size() - 1)
@@ -99,11 +101,13 @@ public:
     virtual ~User() {};
 
     std::string getUsername() const { return username; }
+    std::string getPassword()const{ return password;}
     bool checkPassword(const std::string &input) const
     {
         return password == input;
     }
 
+    virtual void writeToFile(std::ostream& file)const=0;
     virtual bool isAdmin() const = 0;
 };
 
@@ -116,6 +120,13 @@ public:
     {
         return false;
     }
+
+    void writeToFile(std::ostream& file)const override{
+        file<<"USER|"
+            <<getUsername()<<"|"
+            <<getPassword()<<"|"
+            <<std::endl;
+    }
 };
 
 class Admin : public User
@@ -126,6 +137,13 @@ public:
     bool isAdmin() const override
     {
         return true;
+    }
+
+     void writeToFile(std::ostream& file)const override{
+        file<<"ADMIN|"
+            <<getUsername()<<"|"
+            <<getPassword()<<"|"
+            <<std::endl;
     }
 };
 
@@ -147,6 +165,10 @@ class Library
     void clearData()
     {
         books.clear();
+        //auto also work
+        for(std::pair<const std::string, User*>& pair: users) delete pair.second;
+
+        users.clear();
         currentUser = nullptr;
         currentFilePath = "";
         isFileOpen = false;
@@ -172,37 +194,48 @@ class Library
             throw LibraryExceptions("Admin access required.");
     }
 
+    std::vector<std::string> split (const std::string& str, char delimiter){
+        std::vector<std::string> result;
+        std::stringstream ss(str);
+        std::string token;
+
+        while(getline(ss,token, delimiter)){
+            result.push_back(token);
+        }
+
+        return result;
+    }
 public:
     Library() = default; // no magic numbers
     ~Library()
     {
-        // for now neka e taka;
-        for (auto &pair : users)
+        for (std::pair<const std::string, User*>& pair : users)
         {
             delete pair.second;
         }
     }
 
     // no parsing
-    void open(const std::string &path) {}
-    void close() {};
-    void save() {};
-    void saveAs(const std::string &path) {};
-    void help() {};
+    void open(const std::string &path);
+    void close();
+    void save();
+    void saveAs(const std::string &path);
+    void help();
+    void run();
 
-    void logIn() {};
-    void logOut() {};
-    void addUser() {};
-    void removeUser() {};
+    void logIn();
+    void logOut();
+    void addUser();
+    void removeUser();
 
-    void booksAll() {};
-    void booksInfo(std::string isbn) {};
-    void booksFind(std::string option, std::string query) {};
-    void booksSort(std::string option, std::string order) {};
-    void booksAdd() {};
-    void booksRemove() {};
+    void booksAll();
+    void booksInfo(std::string isbn);
+    void booksFind(std::string option, std::string query);
+    void booksSort(std::string option, std::string order);
+    void booksAdd();
+    void booksRemove();
 
-    void run() {};
+    void run();
 };
 
 void Library::open(const std::string &path)
@@ -224,7 +257,20 @@ void Library::open(const std::string &path)
         }
 
         newFile.close();
+
+        file.open(path);
     }
+
+    std::string line;
+    while(getline(file, line)){
+        if(users.empty()){
+            users["admin"]= new Admin("admin", "i<3c++"); 
+        }
+
+        std::vector<std::string> token=split(line, '|');
+    }
+
+    file.close();
 
     currentFilePath = path;
     isFileOpen = true;
@@ -232,16 +278,70 @@ void Library::open(const std::string &path)
     std::cout << "Successfully opened " << path << std::endl;
 }
 
+void Library::close() {
+    requireOpenFile();
+    clearData();
+    std::cout<<"File closed succsesfully!"<<std::endl;
+}
+
+void Library::save(){
+    requireOpenFile();
+    std::ofstream file(currentFilePath);
+
+    if(!file){
+        throw LibraryExceptions("Could not open file for saving.");
+    }
+
+    for(const Book& book:books){
+        book.writeToFile(file);
+    }
+
+    for(const std::pair<const std::string, User*>& pair:users){
+        pair.second->writeToFile(file);
+    }
+
+    file.close();
+
+    std::cout<<"Successfully saved!"<<currentFilePath<<std::endl;
+}
+
+void Library::saveAs(const std::string& path){
+    requireOpenFile();
+
+    currentFilePath=path;
+
+    save();
+
+    std::cout<<"Successfully saved as "<<path<<std::endl;
+}
+
+void Library:: help(){
+    std::cout<<"=============================="<<std::endl;
+    std::cout<<"        LIBRARY SYSTEM        "<<std::endl; 
+    std::cout<<"=============================="<<std::endl;
+
+    std::cout<<"\nFILE COMANDS(Команди за файлове: ):"<<std::endl;
+    std::cout<<"open <file>     -opens file(Отваря файл);"<<std::endl;
+    std::cout<<"\nUSER COMANDS(Команди за потребителя: ):"<<std::endl;
+    std::cout<<"\nBOOK COMANDS(Команди за книгите: ):"<<std::endl;
+
+  
+}
+
 int main()
 {
-    try
-    {
-        Library lib;
-        lib.open("books.txt");
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+
+    try{
+        Library lib1;
+        lib1.open("books.txt");
+
+        lib1.close();
     }
-    catch (const std::exception &e)
-    {
-        std::cout << e.what() << std::endl;
+    catch(const std::exception& e){
+        std::cout<<e.what()<<std::endl;
     }
+
     return 0;
 }

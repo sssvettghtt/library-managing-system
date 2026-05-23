@@ -71,7 +71,7 @@ public:
     void writeToFile(std::ostream &file) const
     {
         file << "BOOK| "
-             <<title << "|"
+             << title << "|"
              << author << "|"
              << genre << "|"
              << description << "|"
@@ -101,13 +101,13 @@ public:
     virtual ~User() {};
 
     std::string getUsername() const { return username; }
-    std::string getPassword()const{ return password;}
+    std::string getPassword() const { return password; }
     bool checkPassword(const std::string &input) const
     {
         return password == input;
     }
 
-    virtual void writeToFile(std::ostream& file)const=0;
+    virtual void writeToFile(std::ostream &file) const = 0;
     virtual bool isAdmin() const = 0;
 };
 
@@ -121,11 +121,12 @@ public:
         return false;
     }
 
-    void writeToFile(std::ostream& file)const override{
-        file<<"USER|"
-            <<getUsername()<<"|"
-            <<getPassword()<<"|"
-            <<std::endl;
+    void writeToFile(std::ostream &file) const override
+    {
+        file << "USER|"
+             << getUsername() << "|"
+             << getPassword() << "|"
+             << std::endl;
     }
 };
 
@@ -139,11 +140,12 @@ public:
         return true;
     }
 
-     void writeToFile(std::ostream& file)const override{
-        file<<"ADMIN|"
-            <<getUsername()<<"|"
-            <<getPassword()<<"|"
-            <<std::endl;
+    void writeToFile(std::ostream &file) const override
+    {
+        file << "ADMIN|"
+             << getUsername() << "|"
+             << getPassword() << "|"
+             << std::endl;
     }
 };
 
@@ -165,8 +167,9 @@ class Library
     void clearData()
     {
         books.clear();
-        //auto also work
-        for(std::pair<const std::string, User*>& pair: users) delete pair.second;
+        // auto also work
+        for (std::pair<const std::string, User *> &pair : users)
+            delete pair.second;
 
         users.clear();
         currentUser = nullptr;
@@ -194,48 +197,328 @@ class Library
             throw LibraryExceptions("Admin access required.");
     }
 
-    std::vector<std::string> split (const std::string& str, char delimiter){
+    std::vector<std::string> split(const std::string &str, char delimiter)
+    {
         std::vector<std::string> result;
         std::stringstream ss(str);
         std::string token;
 
-        while(getline(ss,token, delimiter)){
+        while (getline(ss, token, delimiter))
+        {
             result.push_back(token);
         }
 
         return result;
     }
+
 public:
     Library() = default; // no magic numbers
     ~Library()
     {
-        for (std::pair<const std::string, User*>& pair : users)
+        for (std::pair<const std::string, User *> &pair : users)
         {
             delete pair.second;
         }
     }
 
-    // no parsing
     void open(const std::string &path);
     void close();
     void save();
     void saveAs(const std::string &path);
     void help();
     void run();
+    void exit();
 
-    void logIn();
-    void logOut();
-    void addUser();
-    void removeUser();
+    void logIn()
+    {
 
-    void booksAll();
-    void booksInfo(std::string isbn);
-    void booksFind(std::string option, std::string query);
+        if (currentUser != nullptr)
+        {
+            std::cout << "You are already logged in!" << std::endl;
+            return;
+        }
+
+        std::string inputUsername;
+        std::string inputPassword;
+
+        std::cout << "Enter username: ";
+        std::cin >> inputUsername;
+
+        std::cout << "Enter password: ";
+        std::cin >> inputPassword;
+
+        std::map<std::string, User *>::iterator it = users.find(inputUsername);
+
+        if (it != users.end())
+        {
+            User *foundUser = it->second;
+
+            if (foundUser->getPassword() == inputPassword)
+            {
+                currentUser = foundUser;
+                std::cout << "Welcome, " << currentUser->getUsername() << "!" << std::endl;
+            }
+            else
+            {
+                std::cout << "Invalid username or password!" << std::endl;
+            }
+        }
+        else
+        {
+            std::cout << "invalid username or password!" << std::endl;
+        }
+    }
+
+    void logOut()
+    {
+        if (currentUser == nullptr)
+        {
+            std::cout << "You ar enot logged in!" << std::endl;
+            return;
+        }
+
+        std::string exUser = currentUser->getUsername();
+
+        currentUser = nullptr;
+
+        std::cout << exUser << "successfully logged out!" << std::endl;
+    }
+    void addUser()
+    {
+        if (currentUser == nullptr)
+        {
+            std::cout << "You are not logged in!" << std::endl;
+            return;
+        }
+
+        if (!currentUser->isAdmin())
+        {
+            std::cout << "Access denied! You cannot add new users!" << std::endl;
+            return;
+        }
+
+        std::string newUsername;
+        std::string newPassword;
+
+        std::cout << "Enter new username: ";
+        std::cin >> newUsername;
+
+        std::cout << "Enter new pasword: ";
+        std::cin >> newPassword;
+
+        std::map<std::string, User *>::iterator it = users.find(newUsername);
+
+        if (it != users.end())
+        {
+            std::cout << newUsername << " arlready exists!" << std::endl;
+            return;
+        }
+
+        users[newUsername] = new Client(newUsername, newPassword);
+
+        std::cout << newUsername << "was successfully registered!" << std::endl;
+    }
+    void removeUser()
+    {
+        if (currentUser == nullptr)
+        {
+            std::cout << "You are not logged in!" << std::endl;
+            return;
+        }
+
+        if (!currentUser->isAdmin())
+        {
+            std::cout << "Access denied! You cannot add new users!" << std::endl;
+            return;
+        }
+
+        std::string usernameToRemove;
+        std::cout << "Enter username to remove: ";
+        std::cin >> usernameToRemove;
+
+        if (currentUser->getUsername() == usernameToRemove)
+        {
+            std::cout << "You cannot remove your account while logged in!" << std::endl;
+            return;
+        }
+
+        std::map<std::string, User *>::iterator it = users.find(usernameToRemove);
+
+        if (it != users.end())
+        {
+            User *userToDelete = it->second;
+            delete userToDelete;
+
+            users.erase(it);
+
+            std::cout << usernameToRemove << " was successfully removed!" << std::endl;
+        }
+        else
+        {
+            std::cout << usernameToRemove << " not found!" << std::endl;
+        }
+    }
+
+    void booksAll()
+    {
+        if (books.empty())
+        {
+            std::cout << "The library is currently empty / no file is found!" << std::endl;
+            return;
+        }
+
+        std::cout << "==============================================" << std::endl;
+        std::cout << "          ALL BOOKS IN THE LIBRARY            " << std::endl;
+        std::cout << "==============================================" << std::endl;
+
+        std::cout << " ID/ISBN \t | Title \t\t\t | Author \t\t | Genre " << std::endl;
+        std::cout << "================================================" << std::endl;
+        int counter = 1;
+        for (const Book &b : books)
+        {
+            std::cout << "Book Nº" << counter << "-------" << std::endl;
+            b.printInFull();
+
+            std::cout << "----------------------------------------------" << std::endl;
+            counter++;
+        }
+        std::cout << "Books in total: " << books.size() << std::endl;
+    }
+    void booksInfo(std::string searchISBN)
+    {
+        if (books.empty())
+        {
+            std::cout << "The library is currently empty / no file is found!" << std::endl;
+            return;
+        }
+
+        bool found = false;
+        for (Book &b : books)
+        {
+            if (b.getISBN() == searchISBN)
+            {
+                std::cout << "\n ===DETAILED BOOK INFORMATION=== " << std::endl;
+                b.printInFull();
+
+                std::cout << "==============================================" << std::endl;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            std::cout << "Book with ISBN: " << searchISBN << " not found!" << std::endl;
+        }
+    }
+
+    void booksFind(std::string option, std::string keyword)
+    {
+        if (books.empty())
+        {
+            std::cout << "The library is currently empty / no file is found!" << std::endl;
+            return;
+        }
+
+        bool foundAny = false;
+        int counter = 1;
+
+        std::cout << "\n===SEARCH RESULTS FOR: " << option << "=" << keyword << " ===" << std::endl;
+
+        for (const Book &b : books)
+        {
+            bool isMatch = false;
+
+            if (option == "title")
+            {
+                if (b.getTitle() == keyword)
+                {
+                    isMatch = true;
+                }
+            }
+            else if (option == "author")
+            {
+                if (b.getAuthor() == keyword)
+                {
+                    isMatch = true;
+                }
+            }
+            else if (option == "tags")
+            {
+                std::vector<std::string> bookTags = b.getTags();
+
+                for (const std::string &t : bookTags)
+                {
+                    if (t == keyword)
+                    {
+                        isMatch = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                std::cout << "Invalid search option! Use 'title', 'author', 'tags'! " << std::endl;
+                return;
+            }
+
+            if (isMatch)
+            {
+                std::cout << "\n Match Nº " << counter << ": " << std::endl;
+                b.printInFull();
+                std::cout << "----------------------------------------------" << std::endl;
+                foundAny = true;
+                counter++;
+            }
+        }
+
+        if (!foundAny)
+        {
+            std::cout << "Book with this criteria was not found!" << std::endl;
+        }
+
+        std::cout << "\n==============================================" << std::endl;
+    }
+
     void booksSort(std::string option, std::string order);
-    void booksAdd();
-    void booksRemove();
+    //posle+bonus
+    void booksAdd(){
+        if (currentUser == nullptr)
+        {
+            std::cout << "You are not logged in!" << std::endl;
+            return;
+        }
 
-    void run();
+        if (!currentUser->isAdmin())
+        {
+            std::cout << "Access denied! You cannot add new users!" << std::endl;
+            return;
+        }
+
+        std::string newTitle, newAuthor, newGenre, newISBN, newDescription;
+        int newYear;
+        double newRating;  
+        std::vector<std::string> newTags;
+
+        //shte dovursha posle
+
+    }
+    void booksRemove(){
+        if (currentUser == nullptr)
+        {
+            std::cout << "You are not logged in!" << std::endl;
+            return;
+        }
+
+        if (!currentUser->isAdmin())
+        {
+            std::cout << "Access denied! You cannot add new users!" << std::endl;
+            return;
+        }
+
+        //shte dovursha posle
+
+    }
 };
 
 void Library::open(const std::string &path)
@@ -262,12 +545,14 @@ void Library::open(const std::string &path)
     }
 
     std::string line;
-    while(getline(file, line)){
-        if(users.empty()){
-            users["admin"]= new Admin("admin", "i<3c++"); 
+    while (getline(file, line))
+    {
+        if (users.empty())
+        {
+            users["admin"] = new Admin("admin", "i<3c++");
         }
 
-        std::vector<std::string> token=split(line, '|');
+        std::vector<std::string> token = split(line, '|');
     }
 
     file.close();
@@ -278,54 +563,92 @@ void Library::open(const std::string &path)
     std::cout << "Successfully opened " << path << std::endl;
 }
 
-void Library::close() {
+void Library::close()
+{
     requireOpenFile();
     clearData();
-    std::cout<<"File closed succsesfully!"<<std::endl;
+    std::cout << "File closed succsesfully!" << std::endl;
 }
 
-void Library::save(){
+void Library::save()
+{
     requireOpenFile();
     std::ofstream file(currentFilePath);
 
-    if(!file){
+    if (!file)
+    {
         throw LibraryExceptions("Could not open file for saving.");
     }
 
-    for(const Book& book:books){
+    for (const Book &book : books)
+    {
         book.writeToFile(file);
     }
 
-    for(const std::pair<const std::string, User*>& pair:users){
+    for (const std::pair<const std::string, User *> &pair : users)
+    {
         pair.second->writeToFile(file);
     }
 
     file.close();
 
-    std::cout<<"Successfully saved!"<<currentFilePath<<std::endl;
+    std::cout << "Successfully saved!" << currentFilePath << std::endl;
 }
 
-void Library::saveAs(const std::string& path){
+void Library::saveAs(const std::string &path)
+{
     requireOpenFile();
 
-    currentFilePath=path;
+    currentFilePath = path;
 
     save();
 
-    std::cout<<"Successfully saved as "<<path<<std::endl;
+    std::cout << "Successfully saved as " << path << std::endl;
 }
 
-void Library:: help(){
-    std::cout<<"=============================="<<std::endl;
-    std::cout<<"        LIBRARY SYSTEM        "<<std::endl; 
-    std::cout<<"=============================="<<std::endl;
+void Library::help()
+{
+    std::cout << "==============================" << std::endl;
+    std::cout << "        LIBRARY SYSTEM        " << std::endl;
+    std::cout << "==============================" << std::endl;
+    std::cout << std::endl;
+    std::cout << "\nFILE COMANDS(Команди за файлове: ):" << std::endl;
+    std::cout << "open <file>                     -opens file(Отваря файл);" << std::endl;
+    std::cout << "close                           -closes current file(зарваря текущ файл);" << std::endl;
+    std::cout << "save                            -saves changes(зашазва промени);" << std::endl;
+    std::cout << "saveAs <filr>                   -saves in a new file(запазва в нов файл);" << std::endl;
+    std::cout << "exit                            -exits the program(излизане от програмата);" << std::endl;
 
-    std::cout<<"\nFILE COMANDS(Команди за файлове: ):"<<std::endl;
-    std::cout<<"open <file>     -opens file(Отваря файл);"<<std::endl;
-    std::cout<<"\nUSER COMANDS(Команди за потребителя: ):"<<std::endl;
-    std::cout<<"\nBOOK COMANDS(Команди за книгите: ):"<<std::endl;
+    std::cout << std::endl;
+    std::cout << "\nUSER COMANDS(Команди за потребителя: ):" << std::endl;
+    std::cout << "log in                          -log into an account(вход в акаунт);" << std::endl;
+    std::cout << "log out                         -log out of the system(изход от системата);" << std::endl;
+    std::cout << "users add <users> <password>    -add new user[ADMIN ONLY](добавяне на потребител);" << std::endl;
+    std::cout << "users remove <users>            -remove user[ADMIN ONLY](премахване на потребител);" << std::endl;
 
-  
+    std::cout << std::endl;
+    std::cout << "\nBOOK COMANDS(Команди за книгите: ):" << std::endl;
+    std::cout << "books all                       -list all books(списък на всички книги);" << std::endl;
+    std::cout << "books info <isbn>               -detailed info for a book(информация за книга);" << std::endl;
+    std::cout << "books find <option> <string>    -search by title/author/tag(Търсене на книга);" << std::endl;
+    std::cout << "books dort <option> [asc|desc]  -sort books(сортиране на книгите);" << std::endl;
+    std::cout << "books add                       -add new book[ADMIN ONLY](Добавяне на книга);" << std::endl;
+    std::cout << "books remove <isbn>             -remove book[ADMIN ONLY](премахване на книга);" << std::endl;
+
+    std::cout << "==============================" << std::endl;
+}
+
+void Library::exit()
+{
+    std::cout << "Exiting...." << std::endl;
+
+    if (currentUser != nullptr)
+    {
+        delete currentUser;
+        currentUser = nullptr;
+    }
+
+    ::exit(0);
 }
 
 int main()
@@ -333,14 +656,16 @@ int main()
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    try{
+    try
+    {
         Library lib1;
         lib1.open("books.txt");
 
         lib1.close();
     }
-    catch(const std::exception& e){
-        std::cout<<e.what()<<std::endl;
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
     }
 
     return 0;

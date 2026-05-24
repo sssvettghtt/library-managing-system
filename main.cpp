@@ -5,6 +5,7 @@
 #include <sstream>
 #include <algorithm>
 #include <map>
+#include <limits>
 #include <windows.h>
 
 class LibraryExceptions : public std::exception
@@ -70,7 +71,7 @@ public:
 
     void writeToFile(std::ostream &file) const
     {
-        file << "BOOK| "
+        file << "BOOK|"
              << title << "|"
              << author << "|"
              << genre << "|"
@@ -125,7 +126,7 @@ public:
     {
         file << "USER|"
              << getUsername() << "|"
-             << getPassword() << "|"
+             << getPassword() << "|0"
              << std::endl;
     }
 };
@@ -144,7 +145,7 @@ public:
     {
         file << "ADMIN|"
              << getUsername() << "|"
-             << getPassword() << "|"
+             << getPassword() << "|1"
              << std::endl;
     }
 };
@@ -384,7 +385,7 @@ public:
         }
         std::cout << "Books in total: " << books.size() << std::endl;
     }
-    void booksInfo(std::string searchISBN)
+    void booksView(std::string searchISBN)
     {
         if (books.empty())
         {
@@ -500,10 +501,55 @@ public:
         double newRating;  
         std::vector<std::string> newTags;
 
-        //shte dovursha posle
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
+        std::cout<<"Enter title: ";
+        std::getline(std::cin, newTitle);
+
+        std::cout<<"Enter author: ";
+        std::getline(std::cin, newAuthor);
+
+        std::cout<<"Enter genre: ";
+        std::getline(std::cin, newGenre);
+
+        std::cout<<"Enter year: ";
+        std::cin>>newYear;
+
+        std::cout<<"Enter rating (0.0-5.0): ";
+        std::cin>>newRating;
+
+        std::cout<<"Enter ISBN: ";
+        std::cin>>newISBN;
+
+        for(const Book& b: books){
+            if(b.getISBN()==newISBN){
+                std::cout<<"Error! This book alredy exists in the system!"<<std::endl;
+                return;
+            }
+        }
+
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        std::cout<<"Enter description: ";
+        std::getline(std::cin, newDescription);
+
+        std::cout<<"Enter tags (PRESS ENTER WHEN READY!): ";
+        std::string tagsLine;
+        std::getline(std::cin, tagsLine);
+
+        //razdelqme reda na otdelni dumi 
+        std::stringstream ss(tagsLine);
+        std::string tempTag;
+        while(ss>>tempTag){
+            newTags.push_back(tempTag);
+        }
+
+        Book newBook(newAuthor, newTitle, newGenre, newDescription, newYear, newTags, newRating, newISBN);
+        books.push_back(newBook);
+
+        std::cout<<"Book " <<newTitle<<" was successfully added!"<<std::endl;
     }
-    void booksRemove(){
+    void booksRemove(std::string targetISBN){
         if (currentUser == nullptr)
         {
             std::cout << "You are not logged in!" << std::endl;
@@ -516,8 +562,29 @@ public:
             return;
         }
 
-        //shte dovursha posle
+         if (books.empty())
+        {
+            std::cout << "The library is currently empty / no file is found!" << std::endl;
+            return;
+        }
 
+        bool found=false;
+
+        for(std::vector<Book>::iterator it=books.begin(); it!=books.end(); ++it){
+            if(it->getISBN()==targetISBN){
+                std::string bookTitle=it->getTitle();
+
+                books.erase(it);
+
+                std::cout<<"Book "<<bookTitle<<"(ISBN: "<<targetISBN<<") was successfully removed!"<<std::endl;
+                found=true;
+                break;
+            }
+        }
+
+        if(!found){
+            std::cout<<"Error Book with this ISBN: "<<targetISBN<<" is not found!"<<std::endl;
+        }
     }
 };
 
@@ -552,10 +619,48 @@ void Library::open(const std::string &path)
             users["admin"] = new Admin("admin", "i<3c++");
         }
 
-        std::vector<std::string> token = split(line, '|');
+        std::vector<std::string> tokens = split(line, '|');
+
+        if(tokens[0]=="BOOK"){
+            if(tokens.size()<9) continue;
+
+            std::string title=tokens[1];
+            std::string author=tokens[2];
+            std::string genre=tokens[3];
+            std::string description=tokens[4];
+
+            int year=std::stoi(tokens[5]);
+            double rating=std::stod(tokens[6]);
+            std::string isbn=tokens[7];
+
+            std::vector<std::string> tags=split(tokens[8], ',');
+
+            Book newBook(author, title, genre, description, year, tags, rating, isbn);
+
+            books.push_back(newBook);
+        }
+        else if(tokens[0]=="USER"){
+            if(tokens.size()<4) continue;
+
+            std::string username=tokens[1];
+            std::string password=tokens[2];
+
+            bool isAdmin=(tokens[3]=="1");
+
+            if(isAdmin){
+                users[username]=new Admin(username, password);
+            }
+            else{
+                users[username]= new Client(username, password);
+            }
+        }
     }
 
     file.close();
+
+    if(users.empty()){
+        users["admin"]=new Admin("admin", "i<3c++");
+    }
 
     currentFilePath = path;
     isFileOpen = true;
@@ -642,6 +747,7 @@ void Library::exit()
 {
     std::cout << "Exiting...." << std::endl;
 
+    //is there a problem here?
     if (currentUser != nullptr)
     {
         delete currentUser;

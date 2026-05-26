@@ -159,7 +159,7 @@ class Library
     bool isFileOpen = false;
 
     // helpers
-    std::string toLower(std::string str)
+    static std::string toLower(std::string str)
     {
         std::transform(str.begin(), str.end(), str.begin(), ::tolower);
         return str;
@@ -168,7 +168,6 @@ class Library
     void clearData()
     {
         books.clear();
-        // auto also work
         for (std::pair<const std::string, User *> &pair : users)
             delete pair.second;
 
@@ -212,6 +211,16 @@ class Library
         return result;
     }
 
+    static std::string baseName(const std::string& path){
+        size_t pos=path.find_last_of("/\\");
+        return (pos==std::string::npos)?path:path.substr(pos+1);
+    }
+
+    void ensureDefaultAdmin(){
+        if(users.find("admin")==users.end()){
+            users["admin"]=new Admin("admin", "i<3c++");
+        }
+    }
 public:
     Library() = default; // no magic numbers
     ~Library()
@@ -272,11 +281,7 @@ public:
 
     void logOut()
     {
-        if (currentUser == nullptr)
-        {
-            std::cout << "You ar enot logged in!" << std::endl;
-            return;
-        }
+        requireLogIn();
 
         std::string exUser = currentUser->getUsername();
 
@@ -284,58 +289,27 @@ public:
 
         std::cout << exUser << "successfully logged out!" << std::endl;
     }
-    void addUser()
+
+    void addUser( std::string& newUsername, std::string& newPassword)
     {
-        if (currentUser == nullptr)
-        {
-            std::cout << "You are not logged in!" << std::endl;
+        requireLogIn();
+
+        requireAdmin();
+
+        if(users.count(newUsername)){
+            std::cout<<newUsername<<" already exist!"<<std::endl;
             return;
         }
-
-        if (!currentUser->isAdmin())
-        {
-            std::cout << "Access denied! You cannot add new users!" << std::endl;
-            return;
-        }
-
-        std::string newUsername;
-        std::string newPassword;
-
-        std::cout << "Enter new username: ";
-        std::cin >> newUsername;
-
-        std::cout << "Enter new pasword: ";
-        std::cin >> newPassword;
-
-        std::map<std::string, User *>::iterator it = users.find(newUsername);
-
-        if (it != users.end())
-        {
-            std::cout << newUsername << " arlready exists!" << std::endl;
-            return;
-        }
-
         users[newUsername] = new Client(newUsername, newPassword);
-
         std::cout << newUsername << "was successfully registered!" << std::endl;
     }
-    void removeUser()
+
+    void removeUser(std::string& usernameToRemove)
     {
-        if (currentUser == nullptr)
-        {
-            std::cout << "You are not logged in!" << std::endl;
-            return;
-        }
+        requireLogIn();
 
-        if (!currentUser->isAdmin())
-        {
-            std::cout << "Access denied! You cannot add new users!" << std::endl;
-            return;
-        }
+        requireAdmin();
 
-        std::string usernameToRemove;
-        std::cout << "Enter username to remove: ";
-        std::cin >> usernameToRemove;
 
         if (currentUser->getUsername() == usernameToRemove)
         {
@@ -387,6 +361,9 @@ public:
     }
     void booksView(std::string searchISBN)
     {
+
+        requireLogIn();
+
         if (books.empty())
         {
             std::cout << "The library is currently empty / no file is found!" << std::endl;
@@ -413,8 +390,11 @@ public:
         }
     }
 
-    void booksFind(std::string option, std::string keyword)
+    void booksFind(std::string& option, std::string& keyword)
     {
+
+        requireLogIn();
+
         if (books.empty())
         {
             std::cout << "The library is currently empty / no file is found!" << std::endl;
@@ -481,20 +461,59 @@ public:
         std::cout << "\n==============================================" << std::endl;
     }
 
-    void booksSort(std::string option, std::string order);
-    //posle+bonus
-    void booksAdd(){
-        if (currentUser == nullptr)
+    //insertion sort
+    void booksSort(std::string option, std::string order){
+        requireLogIn();
+
+        if (books.empty())
         {
-            std::cout << "You are not logged in!" << std::endl;
+            std::cout << "The library is currently empty / no file is found!" << std::endl;
             return;
         }
 
-        if (!currentUser->isAdmin())
-        {
-            std::cout << "Access denied! You cannot add new users!" << std::endl;
-            return;
+        bool asc=(order!="desc");
+
+        for(size_t i=1; i<books.size(); i++){
+            Book key=books[i];
+            int j=(int) i-1;
+            while(j>=0){
+                bool goLeft;
+
+                if(option=="title"){
+                    goLeft=asc?toLower(books[j].getTitle())>toLower(key.getTitle()) :
+                            toLower(books[j].getTitle())<toLower(key.getTitle());
+                }
+                else if(option=="author"){
+                    goLeft=asc?toLower(books[j].getAuthor())>toLower(key.getAuthor()) :
+                            toLower(books[j].getAuthor())<toLower(key.getAuthor());
+                }
+                else if(option=="year"){
+                    goLeft=asc?toLower(books[j].getYear())>toLower(key.getYear()) :
+                            toLower(books[j].getYear())<toLower(key.getYear());
+                }
+                else if(option=="rating"){
+                    goLeft=asc?toLower(books[j].getRating())>toLower(key.getRating()) :
+                            toLower(books[j].getRating())<toLower(key.getRating);
+                }
+                else{
+                    std::cout<<"Invalid option. Select title, author, year or rating!"<<std::endl; 
+                    return;
+                }
+
+                if(!goLeft) break;
+                books[j+1]=books[j];
+                j--;
+            }
+            books[j+1]=key;
         }
+        std::cout<<"Books sorted by: "<<option<<"( "<<(asc ? "asc" : "desc")<<")"<<std::endl;
+    }
+
+
+    void booksAdd(){
+        requireLogIn();
+
+        requireAdmin();
 
         std::string newTitle, newAuthor, newGenre, newISBN, newDescription;
         int newYear;
@@ -549,7 +568,8 @@ public:
 
         std::cout<<"Book " <<newTitle<<" was successfully added!"<<std::endl;
     }
-    void booksRemove(std::string targetISBN){
+    void booksRemove(std::string&
+         targetISBN){
         if (currentUser == nullptr)
         {
             std::cout << "You are not logged in!" << std::endl;
@@ -603,7 +623,7 @@ void Library::open(const std::string &path)
 
         if (!newFile)
         {
-            throw LibraryExceptions("Could not create file.");
+            throw LibraryExceptions("Could not create file: "+path);
         }
 
         newFile.close();
@@ -612,12 +632,9 @@ void Library::open(const std::string &path)
     }
 
     std::string line;
-    while (getline(file, line))
+    while (std::getline(file, line))
     {
-        if (users.empty())
-        {
-            users["admin"] = new Admin("admin", "i<3c++");
-        }
+       if(line.empty()) continue;
 
         std::vector<std::string> tokens = split(line, '|');
 
@@ -639,7 +656,7 @@ void Library::open(const std::string &path)
 
             books.push_back(newBook);
         }
-        else if(tokens[0]=="USER"){
+        else if(tokens[0]=="USER" || tokens[0]=="ADMIN"){
             if(tokens.size()<4) continue;
 
             std::string username=tokens[1];
@@ -665,14 +682,15 @@ void Library::open(const std::string &path)
     currentFilePath = path;
     isFileOpen = true;
 
-    std::cout << "Successfully opened " << path << std::endl;
+    std::cout << "Successfully opened " << baseName(path) << std::endl;
 }
 
 void Library::close()
 {
     requireOpenFile();
+    std::string name=baseName(currentFilePath);
     clearData();
-    std::cout << "File closed succsesfully!" << std::endl;
+    std::cout << "File closed succsesfully!" << name <<std::endl;
 }
 
 void Library::save()
@@ -697,15 +715,13 @@ void Library::save()
 
     file.close();
 
-    std::cout << "Successfully saved!" << currentFilePath << std::endl;
+    std::cout << "Successfully saved!" << baseName(currentFilePath) << std::endl;
 }
 
 void Library::saveAs(const std::string &path)
 {
     requireOpenFile();
-
     currentFilePath = path;
-
     save();
 
     std::cout << "Successfully saved as " << path << std::endl;
@@ -757,22 +773,143 @@ void Library::exit()
     ::exit(0);
 }
 
+void Library::run(){
+    std::string line;
+    while(true){
+        std::cout<<"> ";
+        if(!std::getline(std::cin, line)) break;
+
+        std::istringstream iss(line);
+        std::string cmd;
+        iss>>cmd;
+        if(cmd.empty()) continue;
+
+        try{
+            if(cmd=="open"){
+                std::string path;
+                iss>>path;
+                if(path.empty()){
+                    std::cout<<"Usage: open <file>"<<std::endl;
+                    continue;
+                }
+                open(path);
+            }
+            else if(cmd=="close"){
+                close();
+            }
+            else if(cmd=="save"){
+                save();
+            }
+            else if(cmd=="saveas"){
+                std::string path;
+                std::getline(iss, path);
+
+                while(!path.empty() && path.front()==' '){
+                    path.erase(path.begin());
+                }
+
+                if(path.empty()){
+                    std::cout<<"Usage: saveAs <file>"<<std::endl;
+                    continue;
+                }
+
+                saveAs(path);
+            }
+            else if(cmd=="help"){
+                help();
+            }
+            else if(cmd=="exit"){
+                exit();
+            }
+            else if(cmd=="login"){
+                requireOpenFile();
+                logIn();
+            }
+            else if(cmd=="logout"){
+                requireOpenFile();
+                logOut();
+            }
+            else if(cmd=="books"){
+                requireOpenFile();
+                std::string sub;
+                iss>>sub;
+                if(sub=="all"){
+                    booksAll();
+                }
+                else if(sub=="view"){
+                    std::string isbn;
+                    iss>>isbn;
+                    booksView(isbn);
+                }
+                else if(sub=="find"){
+                    std::string option, keyword;
+                    iss>>option;
+                    std::getline(iss, keyword);
+                    booksFind(option, keyword);
+                }
+                else if(sub=="sort"){
+                    std::string option, order="asc";
+                    iss>>option;
+                    std::string maybeOrder;
+                    iss>>maybeOrder;
+                    if(!maybeOrder.empty()) order=maybeOrder;
+                    booksSort(option, order);
+                }
+                else if(sub=="add"){
+                    booksAdd();
+                }
+                else if(sub=="remove"){
+                    std::string isbn;
+                    iss>>isbn;
+                    booksRemove(isbn);
+                }
+                else{
+                    std::cout<<"Unknow book comand, please look at 'help' "<<std::endl;
+                }
+            }
+            else if(cmd=="users"){
+                requireOpenFile();
+                std::string sub;
+                iss>>sub;
+                if(sub=="add"){
+                    std::string user, pass;
+                    iss>>user>>pass;
+                    if(user.empty() || pass.empty()){
+                        std::cout<<"Usage: users add <user> <password>."<<std::endl;
+                        continue;
+                    }
+                    addUser(user, pass);
+                }
+                else if(sub=="remove"){
+                    std::string user; 
+                    iss>>user;
+                    if(user.empty()){
+                        std::cout<<"Usage: users remove <user>"<<std::endl;
+                        continue;
+                    }
+                    removeUser(user);
+                }
+                else{
+                    std::cout<<"Unknown users command. Type 'help' to see the possibilties."<<std::endl;
+                }
+            }
+            else{
+                std::cout<<"Unknown command.Type 'help' for help."<<std::endl;
+            }
+        }
+        catch(const LibraryExceptions& e){
+            std::cout<<'Error: '<<e.what()<<std::endl;
+        }
+    }
+}
+
 int main()
 {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    try
-    {
-        Library lib1;
-        lib1.open("books.txt");
-
-        lib1.close();
-    }
-    catch (const std::exception &e)
-    {
-        std::cout << e.what() << std::endl;
-    }
+   Library lib;
+   lib.run();
 
     return 0;
 }

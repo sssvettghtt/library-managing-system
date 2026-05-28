@@ -71,6 +71,28 @@ std::string Library::toLower(std::string str)
         }
     }
 
+    std::string hiddenPasswordInput(){        
+        std::string password;
+        char ch;
+
+        while((ch=_getch())!='\r'){
+            if(ch=='\b'){
+                if(!password.empty()){
+                    password.pop_back();
+                    std::cout<<"\b \b";
+                }
+            }
+            else{
+                password+=ch;
+                std::cout<<'*';
+            }
+        }
+        
+        std::cout<<std::endl;
+
+        return password;
+    }
+
     void Library::logIn()
     {
 
@@ -87,7 +109,8 @@ std::string Library::toLower(std::string str)
         std::cin >> inputUsername;
 
         std::cout << "Enter password: ";
-        std::cin >> inputPassword;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        inputPassword=hiddenPasswordInput();        
 
         std::map<std::string, User *>::iterator it = users.find(inputUsername);
 

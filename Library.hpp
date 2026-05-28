@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <limits>
 #include <cstdlib>
+#include <windows.h>
+#include <conio.h>
 
 #include "Book.hpp"
 #include "User.hpp"

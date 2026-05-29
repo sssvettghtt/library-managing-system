@@ -1,0 +1,13 @@
+# Compiled executable files
+*.exe
+
+# Object files
+*.o
+*.obj
+
+# Doxygen generated documentation
+docs/html/
+docs/latex/
+
+# VS Code settings
+.vscode/

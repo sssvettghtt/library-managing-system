@@ -134,6 +134,30 @@ std::string Library::toLower(std::string str)
         }
     }
 
+    //realizaciq na login za raylib
+    bool Library::logInCredentials(const std::string& inputUssername, const std::string& inputPassword, std::string& message){
+        if(currentUser!=nullptr){
+            std::cout<<"Already logged in!"<<std::endl;
+            return false;
+        }
+
+        std::map<std::string, User*>::iterator it=users.find(inputUssername);
+
+        if(it!=users.end()){
+            User* foundUser=it->second;
+
+            if(foundUser->getPassword()==inputPassword){
+                currentUser=foundUser;
+                std::cout<<"Welcome, "+ currentUser->getUsername()+"!";
+                return true;
+            }
+        }
+
+        message="Wrong username or password!";
+        return false;
+
+    }
+
     void Library::logOut()
     {
         requireLogIn();

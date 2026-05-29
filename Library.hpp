@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <limits>
 #include <cstdlib>
-#include <windows.h>
 #include <conio.h>
+
 
 #include "Book.hpp"
 #include "User.hpp"
@@ -45,9 +45,13 @@ public:
     void close();
     void save();
     void saveAs(const std::string &path);
+
+    //raylib ne poddurja bulgarsi za help
     void help();
     void run();
     void exit();
+    //loginza raylib
+    bool logInCredentials(const std::string& inputUsername, const std::string& inputPassword, std::string& message);
     void logIn();
     void logOut();
     void addUser( const std::string& newUsername, const std::string& newPassword);

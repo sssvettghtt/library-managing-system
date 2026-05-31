@@ -354,6 +354,7 @@ void Library::booksFind(const std::string &option, const std::string &keyword)
         return;
     }
 
+    std::string lowerKeyword=toLower(keyword);
     bool foundAny = false;
     int counter = 1;
 
@@ -365,30 +366,20 @@ void Library::booksFind(const std::string &option, const std::string &keyword)
 
         if (option == "title")
         {
-            if (b.getTitle() == keyword)
-            {
-                isMatch = true;
-            }
+            isMatch = toLower(b.getTitle()).find(lowerKeyword) != std::string::npos;
         }
         else if (option == "author")
         {
-            if (b.getAuthor() == keyword)
-            {
-                isMatch = true;
-            }
+           isMatch = toLower(b.getAuthor()).find(lowerKeyword) != std::string::npos;
         }
         else if (option == "tags")
         {
-            std::vector<std::string> bookTags = b.getTags();
-
-            for (const std::string &t : bookTags)
-            {
-                if (t == keyword)
-                {
-                    isMatch = true;
-                    break;
-                }
+           for(const std::string &t: b.getTags()){
+            if(toLower(t).find(lowerKeyword)!=std::string::npos){
+                isMatch=true;
+                break;
             }
+           }
         }
         else
         {
@@ -538,17 +529,9 @@ void Library::booksAdd()
 
 void Library::booksRemove(const std::string &targetISBN)
 {
-    if (currentUser == nullptr)
-    {
-        std::cout << "You are not logged in!" << std::endl;
-        return;
-    }
+    requireLogIn();
 
-    if (!currentUser->isAdmin())
-    {
-        std::cout << "Access denied! You cannot add new users!" << std::endl;
-        return;
-    }
+    requireAdmin();
 
     if (books.empty())
     {

@@ -130,5 +130,5 @@ class Book{
  * 
  * @param file Изходен поток към файла.
  */
-    void writeToFile(std::ostream& filr)const;
+    void writeToFile(std::ostream& file)const;
 };

@@ -11,7 +11,6 @@
 #include <cstdlib>
 #include <conio.h>
 
-
 #include "Book.hpp"
 #include "User.hpp"
 #include "LibraryExceptions.hpp"
@@ -34,9 +33,10 @@ class Library
 
     void requireAdmin() const;
 
-    std::vector<std::string> split(const std::string &str, char delimiter)const;
-    static std::string baseName(const std::string& path);
+    std::vector<std::string> split(const std::string &str, char delimiter) const;
+    static std::string baseName(const std::string &path);
     void ensureDefaultAdmin();
+
 public:
     Library() = default; // no magic numbers
     ~Library();
@@ -46,20 +46,33 @@ public:
     void save();
     void saveAs(const std::string &path);
 
-    //raylib ne poddurja bulgarsi za help
+    // raylib ne poddurja bulgarsi za help
     void help();
     void run();
     void exit();
-    //loginza raylib
-    bool logInCredentials(const std::string& inputUsername, const std::string& inputPassword, std::string& message);
+    // login za raylib
+    bool logInCredentials(const std::string &inputUsername, const std::string &inputPassword, std::string &message);
+    //za raylib addBook, addUser, addBook, remove Book/User
+    bool isCurrentUserAdmin() const;
+
+    bool booksAddGui(const std::string &title,
+                     const std::string &author,
+                     const std::string &genre,
+                     const std::string &description,
+                     int year,
+                     const std::vector<std::string> &tags,
+                     double rating,
+                     const std::string &isbn,
+                     std::string &message);
+
     void logIn();
     void logOut();
-    void addUser( const std::string& newUsername, const std::string& newPassword);
-    void removeUser(const std::string& usernameToRemove);
+    void addUser(const std::string &newUsername, const std::string &newPassword);
+    void removeUser(const std::string &usernameToRemove);
     void booksAll();
-    void booksView(const std::string& searchISBN);
-    void booksFind(const std::string& option, const std::string& keyword);
-    void booksSort(const std::string& option, const std::string& order);
+    void booksView(const std::string &searchISBN);
+    void booksFind(const std::string &option, const std::string &keyword);
+    void booksSort(const std::string &option, const std::string &order);
     void booksAdd();
-    void booksRemove(const std::string& targetISBN);
+    void booksRemove(const std::string &targetISBN);
 };

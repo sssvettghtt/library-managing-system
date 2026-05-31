@@ -1,3 +1,15 @@
+/**
+ * @file main_with_raylib.cpp
+ * @brief Стартира  графичната версия на библиотечната система чрез Raylib.
+ * 
+ * Фаилът съдържа основния графичен интерфейс на проекта.
+ * Чрез Raylib се визуализират различните екрани за вход, профил,
+ * преглед на книги, търсене, сортиране, запазване и администраторски действия.
+ * 
+ * Графичен интерфейс използва обект от тип Library, който съдържа
+ * основната логика на библиотечната система.
+ */
+
 #include "raylib.h"
 #include "Library.hpp"
 
@@ -9,16 +21,22 @@
 
 // g++ main_with_raylib.cpp Library.cpp Book.cpp User.cpp -o app.exe -IC:\raylib\raylib\src -LC:\raylib\raylib\build\raylib -lraylib -lopengl32 -lgdi32 -lwinmm
 
-Color MY_BG = {245, 241, 226, 255};
-Color MY_DARK = {35, 32, 25, 255};
+Color MY_BG = {245, 241, 226, 255};     ///<Основен цвят на фона.
+Color MY_DARK = {35, 32, 25, 255};      ///< Тъмен цвят за рамки  и текст. 
+Color MY_BROWN = {141, 116, 88, 255};   ///< Кафяв цвят за бутони и фон. 
+Color MY_BEIGE = {195, 181, 142, 255};  ///<Бежов цвят за бутони.
+Color MY_LIGHT = {235, 228, 205, 255};  ///<Светъл цвят за декоративни области.
+Color MY_BOX = {248, 245, 232, 255};    ///<Цвят за панели и полета.
+Color MY_PINK = {166, 133, 121, 255};   ///<Допълнителен декоративен цвят.
+Color MY_BLUEINK = {70, 65, 105, 255};  ///<Синкав цвят за вторичен текст.
 
-Color MY_BROWN = {141, 116, 88, 255};
-Color MY_BEIGE = {195, 181, 142, 255};
-Color MY_LIGHT = {235, 228, 205, 255};
-Color MY_BOX = {248, 245, 232, 255};
-Color MY_PINK = {166, 133, 121, 255};
-Color MY_BLUEINK = {70, 65, 105, 255};
-
+/**
+ * @enum Screen
+ * @brief Описва различните екрани в графичния интерфейс.
+ * 
+ * Използва се а превключване между начална страница login страница,
+ * профил, списък с книги, save as форма и администраторски форми.
+ */
 enum Screen
 {
     HOME_SCREEN,
@@ -35,11 +53,15 @@ enum Screen
     BOOK_SORT_SCREEN
 };
 
+/**
+ * @enum ActiveInput
+ * @brief Показва кое текстово поле е активно в login екрана.
+ */
 enum ActiveInput
 {
-    NONE_INPUT,
-    USERNAME_INPUT,
-    PASSWORD_INPUT
+    NONE_INPUT,         ///< Няма активно поле.
+    USERNAME_INPUT,     ///<Активно е полето за потребителско име.
+    PASSWORD_INPUT      ///<Активно е полето за парола.
 };
 
 Color MakeLighter(Color color, int amount)
@@ -64,6 +86,18 @@ void DrawTextBG(Font font, const std::string &text, float x, float y, float size
     DrawTextEx(font, text.c_str(), {x, y}, size, 1, color);
 }
 
+/**
+ * @brief Рисува бутон и проверява дали е натиснат.
+ * 
+ * Бутонът променя цвета си при посочване с мишката.
+ * 
+ * @param rect Позиция и размер на бутона.
+ * @param text Текст, който се показва върху бътона.
+ * @param font Шрифт за текста.
+ * @param buttonColor основен цвят на бутона
+ * @return true Ако бутонът е натиснат с левия бутон на мишката.
+ * @return false Ако бутонът не е натиснат.
+ */
 bool Button(Rectangle rect, const char *text, Font font, Color buttonColor)
 {
     Vector2 mouse = GetMousePosition();
@@ -82,6 +116,14 @@ bool Button(Rectangle rect, const char *text, Font font, Color buttonColor)
     return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
+/**
+ *  @brief Обработа въвеждане на текст от клавиатурата.
+ * 
+ * Добавя въведените символи към подадения низ и обработва Backspace
+ * за изтриване на последния символ.
+ * 
+ * @param target Низът, в който се записва въведеният текст.
+ */
 void HandleTextInput(std::string &target)
 {
     int key = GetCharPressed();
@@ -102,6 +144,18 @@ void HandleTextInput(std::string &target)
     }
 }
 
+/**
+ * @brief Рисува текстово поле за въвеждане.
+ * 
+ * Ако полето е за парола, реалният текст се скрива и се показват звездички.
+ * 
+ * @param rect Позиция и размер на текстовото поле.
+ * @param realText Реалният текст, записан в полето.
+ * @param label Надпис над полето.
+ * @param font Шрифт затекста.
+ * @param active Показва дали полето е активно.
+ * @param passwordField Показва дали полето е поле за парола.
+ */
 void DrawInputBox(Rectangle rect,
                   const std::string &realText,
                   const char *label,
@@ -153,6 +207,14 @@ void DrawColoredBackgroundAreas()
     DrawLineV(bottomLeft, rightMiddle, MY_DARK);
 }
 
+/**
+ * @brief Рисува началната страница на графичния интерфейс.
+ * 
+ * Показва заглавие на проекта, приветствен текст и текущо съобщение.
+ * 
+ * @param font Шрифт за текста.
+ * @param message Съобщение, което се показва в долната част на екрана.
+ */
 void DrawHomePage(Font font, const std::string &message)
 {
     ClearBackground(MY_BG);
@@ -178,6 +240,17 @@ void DrawHomePage(Font font, const std::string &message)
     DrawTextBG(font, message, 40, 675, 22, MY_DARK);
 }
 
+/**
+ * @brief Рисува екрана за вход в системата.
+ * 
+ * Показва полета за потребителско име и парола.
+ * 
+ * @param font Шрифт за текста.
+ * @param username Въведено потребителско име.
+ * @param password Въведена парола.
+ * @param message Съобщение към потребителя.
+ * @param activeInput Активното поле за въвеждане.
+ */
 void DrawLoginPage(Font font,
                    const std::string &username,
                    const std::string &password,
@@ -222,7 +295,16 @@ void DrawPopup(Font font, const std::string &text)
     DrawTextEx(font, text.c_str(), {popup.x + 35, popup.y + 45}, 22, 1, MY_DARK);
     DrawTextEx(font, "Click OK to continue", {popup.x + 120, popup.y + 80}, 18, 1, MY_BLUEINK);
 }
-
+/**
+ * @brief Рисува профилната страница на влезналия потребител.
+ * 
+ * Показва приветсвие, примерна зона за профилна снимка
+ * и съобщение за текущото състояние на програмата.
+ * 
+ * @param font Шрифт на текста.
+ * @param username Име на текущо влезналия потребител.
+ * @param message Съобщение към потребителя.
+ */
 void DrawProfilePage(Font font, const std::string &username, const std::string &message)
 {
     ClearBackground(MY_BG);
@@ -250,6 +332,16 @@ void DrawProfilePage(Font font, const std::string &username, const std::string &
     DrawTextBG(font, message, 130, 610, 22, MY_DARK);
 }
 
+/**
+ * @brief Връща текста от booksAll() като низ.
+ * 
+ * Методът временно пренасочва std::cout към string stream,
+ * за да може резултатът от конзолната функция booksAll()
+ * да бъде показан в Raylib прозореца.
+ * 
+ * @param lib Обектът Library, от който се взима информацията.
+ * @return Текст с всички книги или съобщение за грешка.
+ */
 std::string GetBooksAllText(Library &lib)
 {
     std::ostringstream buffer;
@@ -347,6 +439,13 @@ std::string CaptureBooksAll(Library &lib)
     return buffer.str();
 }
 
+/**
+ * @brief Връща резултата от booksView() като текст.
+ * 
+ * @param lib  Обектът Library.
+ * @param isbn ISBN на книгата, която се търси.
+ * @return Текст с информация за книгата или съобщение за грешка.
+ */
 std::string CaptureBooksView(Library &lib, const std::string &isbn)
 {
     std::ostringstream buffer;
@@ -366,6 +465,14 @@ std::string CaptureBooksView(Library &lib, const std::string &isbn)
     return buffer.str();
 }
 
+/**
+ * @brief Връща резултата от booksFind() като текст.
+ * 
+ * @param lib  Обектът Library.
+ * @param option Критерий за търсене.
+ * @param keyword Търсена стойност.
+ * @return Текст с намерените книги или съобщение за грешка.
+ */
 std::string CaptureBooksFind(Library &lib, const std::string &option, const std::string &keyword)
 {
     std::ostringstream buffer;
@@ -385,6 +492,17 @@ std::string CaptureBooksFind(Library &lib, const std::string &option, const std:
     return buffer.str();
 }
 
+/**
+ * @brief Сортира книгите и връща резултата като текст. 
+ * 
+ * След сортиране извиква booksAll(), за да се покажат книгите 
+ * в новия ред.
+ * 
+ * @param lib  Обектът Library.
+ * @param option Критерий за сортиране.
+ * @param orer Ред на сортиране: asc или desc.
+ * @return Текст със сортираните книги или съобщение за грешка.
+ */
 std::string CaptureBooksSort(Library &lib, const std::string &option, const std::string &order)
 {
     std::ostringstream buffer;
@@ -406,6 +524,15 @@ std::string CaptureBooksSort(Library &lib, const std::string &option, const std:
     return buffer.str();
 }
 
+/**
+ * @brief Главна функция на Raylib версията на програмата.
+ * 
+ * Създава графичен прозорец, зарежда шрифт, и управлява основния 
+ * цикъл на приложението. В зависимост от текущия Screen се рисува 
+ * различна страница и се обработват действията на потребителя.
+ * 
+ * @return 0 при успешно приключване на програмата.
+ */
 int main()
 {
     Library lib;
@@ -467,6 +594,7 @@ int main()
         {
             DrawHomePage(font, message);
 
+            // Бутон за отваряне на файл
             if (Button({350, 350, 220, 45}, "1. Open file", font, MY_BOX))
             {
                 try
@@ -507,6 +635,7 @@ int main()
             }
             ///
 
+            // Бутон за вход
             if (Button({350, 410, 220, 45}, "2. Log in", font, MY_BOX))
             {
                 currentScreen = LOGIN_SCREEN;

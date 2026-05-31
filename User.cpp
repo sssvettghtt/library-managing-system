@@ -1,10 +1,21 @@
 #include "User.hpp"
 
+/**
+ * @brief Инициализира потребителско име и парола.
+ */
     User::User(const std::string &u, const std::string &p) : username(u), password(p) {}
+
+/**
+ * @brief Виртуален деструктор за коректно изтриване чрез User*.
+ */
      User::~User() {};
 
     std::string User::getUsername() const { return username; }
     std::string User::getPassword() const { return password; }
+
+/**
+ * @brief Сравнява въведена парола със запазената парола.
+ */
     bool User::checkPassword(const std::string &input) const
     {
         return password == input;

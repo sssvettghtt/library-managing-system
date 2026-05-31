@@ -1,3 +1,2 @@
-BOOK|The Hobbit|Tolken|fantasy|Adventure in Middle Earth|1937|4.8|9780547928227|adventure,     magig,     fantasy,     dwarfs
+BOOK|The Bell Jar|Julia Plaque|autobiography|a young girl that is struggling with her mental health|1959|3.9|248726|mental, health, feminism, autobiography
 ADMIN|admin|i<3c++|1
-USER|svetoslava|123456|0

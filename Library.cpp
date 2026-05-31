@@ -1,11 +1,24 @@
 #include "Library.hpp"
 
+/**
+ * @brief Преобразува подадения низ в малки букви
+ * 
+ * Използва се при сортиране на книги по заглавие или автор,
+ * за да не се влияе сравнението от главни и малки букви.
+ */
+
 std::string Library::toLower(std::string str)
 {
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     return str;
 }
 
+/** 
+ * @brief Изчиства всички текущо заредени данни.
+ * 
+ * Методът се използва при затваряне на файл или при отваряне на нов файл.
+ * Освобождава паметта на потребителите, защото те се съхраняват чрез указатели.
+*/
 void Library::clearData()
 {
     books.clear();
@@ -18,18 +31,27 @@ void Library::clearData()
     isFileOpen = false;
 }
 
+/**
+ * @brief Проверява дали има отворен файл.
+ */
 void Library::requireOpenFile() const
 {
     if (!isFileOpen)
         throw LibraryExceptions("No file is currently open!");
 }
 
+/**
+ * @brief Проверява дали има влязъл потребител.
+ */
 void Library::requireLogIn() const
 {
     if (currentUser == nullptr)
         throw LibraryExceptions("No users logged in.");
 }
 
+/**
+ * @brief Проверява дали текущият потребител има администраторски права.
+ */
 void Library::requireAdmin() const
 {
     requireLogIn();
@@ -169,7 +191,12 @@ bool Library::logInCredentials(const std::string &inputUssername, const std::str
     return false;
 }
 
-//bookAdd za raylib
+/**
+ * @brief Добавя книга чрез данни, подадени от графичен интерфейс.
+ * 
+ * Методът е отделен от nooksAdd(), защото booksAdd() чете данни от конзолата,
+ * докато този метод получава данните като параметри от Raylib формата.
+ */
 bool Library::booksAddGui(const std::string &title,
                           const std::string &author,
                           const std::string &genre,
@@ -387,7 +414,13 @@ void Library::booksFind(const std::string &option, const std::string &keyword)
     std::cout << "\n==============================================" << std::endl;
 }
 
-// insertion sort
+/**
+ * @brief  Реализира сортиране на книгите чрез insertion sort.
+ * 
+ * Книгите могат да се сортират по заглавие, автор, година или рейтинг.
+ * Ако order е "desc", сортирането е в низходящ ред. Във всички останали
+ * случаи се използва възходящ ред.
+ */
 void Library::booksSort(const std::string &option, const std::string &order)
 {
     requireLogIn();
@@ -545,6 +578,14 @@ void Library::booksRemove(const std::string &targetISBN)
     }
 }
 
+/**
+ * @brief Зарежда книги и потребители от файл.
+ * 
+ * Методът отваря подадения файл. Ако файлът не съществува,
+ * се създава нов празен файл.. След това всеки ред се разделя 
+ * по символа '|' и според първата стойност се създава книга, 
+ * клиент или администратор.
+ */
 void Library::open(const std::string &path)
 {
     if (isFileOpen)
@@ -669,6 +710,7 @@ void Library::saveAs(const std::string &path)
     std::cout << "Successfully saved as " << path << std::endl;
 }
 
+//books view i books info e edna i sushtas
 void Library::help()
 {
     std::cout << "==============================" << std::endl;
@@ -679,7 +721,7 @@ void Library::help()
     std::cout << "open <file>                     -opens file(Отваря файл);" << std::endl;
     std::cout << "close                           -closes current file(зарваря текущ файл);" << std::endl;
     std::cout << "save                            -saves changes(зашазва промени);" << std::endl;
-    std::cout << "saveAs <filr>                   -saves in a new file(запазва в нов файл);" << std::endl;
+    std::cout << "saveas <file>                   -saves in a new file(запазва в нов файл);" << std::endl;
     std::cout << "exit                            -exits the program(излизане от програмата);" << std::endl;
 
     std::cout << std::endl;
@@ -692,9 +734,9 @@ void Library::help()
     std::cout << std::endl;
     std::cout << "\nBOOK COMANDS(Команди за книгите: ):" << std::endl;
     std::cout << "books all                       -list all books(списък на всички книги);" << std::endl;
-    std::cout << "books info <isbn>               -detailed info for a book(информация за книга);" << std::endl;
+    std::cout << "books view <isbn>               -detailed info for a book(информация за книга);" << std::endl;
     std::cout << "books find <option> <string>    -search by title/author/tag(Търсене на книга);" << std::endl;
-    std::cout << "books dort <option> [asc|desc]  -sort books(сортиране на книгите);" << std::endl;
+    std::cout << "books sort <option> [asc|desc]  -sort books(сортиране на книгите);" << std::endl;
     std::cout << "books add                       -add new book[ADMIN ONLY](Добавяне на книга);" << std::endl;
     std::cout << "books remove <isbn>             -remove book[ADMIN ONLY](премахване на книга);" << std::endl;
 
@@ -708,6 +750,12 @@ void Library::exit()
     ::exit(0);
 }
 
+/**
+ * @brief Главен цикъл за конзолния режим на програмата.
+ * 
+ * Методът чете команди от стандартния вход и според въведената команда
+ * извиква съответната Функция от библиотеката.
+ */
 void Library::run()
 {
     std::string line;
@@ -789,6 +837,7 @@ void Library::run()
                 {
                     booksAll();
                 }
+                //v ednata tablica e books view, v drugata e books info
                 else if (sub == "view")
                 {
                     std::string isbn;

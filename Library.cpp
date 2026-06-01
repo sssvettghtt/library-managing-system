@@ -298,8 +298,6 @@ void Library::booksAll()
     std::cout << "          ALL BOOKS IN THE LIBRARY            " << std::endl;
     std::cout << "==============================================" << std::endl;
 
-    //std::cout << " ID/ISBN \t | Title \t\t\t | Author \t\t | Genre " << std::endl;
-    //std::cout << "================================================" << std::endl;
     int counter = 1;
     for (const Book &b : books)
     {

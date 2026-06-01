@@ -96,7 +96,7 @@ Library::~Library()
     }
 }
 
-std::string hiddenPasswordInput()
+std::string Library::hiddenPasswordInput()
 {
     std::string password;
     char ch;
@@ -239,7 +239,7 @@ void Library::logOut()
 
     currentUser = nullptr;
 
-    std::cout << exUser << "successfully logged out!" << std::endl;
+    std::cout << exUser << " successfully logged out!" << std::endl;
 }
 
 void Library::addUser(const std::string &newUsername, const std::string &newPassword)
@@ -254,7 +254,7 @@ void Library::addUser(const std::string &newUsername, const std::string &newPass
         return;
     }
     users[newUsername] = new Client(newUsername, newPassword);
-    std::cout << newUsername << "was successfully registered!" << std::endl;
+    std::cout << newUsername << " was successfully registered!" << std::endl;
 }
 
 void Library::removeUser(const std::string &usernameToRemove)
@@ -549,7 +549,7 @@ void Library::booksRemove(const std::string &targetISBN)
 
             books.erase(it);
 
-            std::cout << "Book " << bookTitle << "(ISBN: " << targetISBN << ") was successfully removed!" << std::endl;
+            std::cout << "Book " << bookTitle << " (ISBN: " << targetISBN << ") was successfully removed!" << std::endl;
             found = true;
             break;
         }
@@ -656,7 +656,7 @@ void Library::close()
     requireOpenFile();
     std::string name = baseName(currentFilePath);
     clearData();
-    std::cout << "File closed succsesfully!" << name << std::endl;
+    std::cout << "File closed succsesfully! " << name << std::endl;
 }
 
 void Library::save()
@@ -681,7 +681,7 @@ void Library::save()
 
     file.close();
 
-    std::cout << "Successfully saved!" << baseName(currentFilePath) << std::endl;
+    std::cout << "Successfully saved! " << baseName(currentFilePath) << std::endl;
 }
 
 void Library::saveAs(const std::string &path)
